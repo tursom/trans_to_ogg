@@ -8,5 +8,7 @@ transogg listfile [output dir]
 
 例：
 ./transogg list1 /tmp/music/ogg
+#批量转码mp3
+ls *.mp3 2>/dev/null > /dev/shm/mp3filelist; transogg /dev/shm/mp3filelist; rm /dev/shm/mp3filelist
 
 ps：可将本脚本放入/usr/local/bin中，方便随时调用
