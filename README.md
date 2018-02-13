@@ -1,4 +1,6 @@
 # trans_to_ogg
+将音频（视频）批量转码为ogg音频
+
 transogg listfile [output dir]
 
 需要安装ffmpeg
