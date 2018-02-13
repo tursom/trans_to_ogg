@@ -32,21 +32,24 @@ then
 fi
 echo "output dir:$dir" 
 
+#指定缓存目录
+buffdir="transogg$$"
+
 #建立缓存目录到系统默认内存文件系统
-if [ ! -d "/dev/shm/transogg" ]
+if [ ! -d "/dev/shm/$buffdir" ]
 then
-	mkdir -p "/dev/shm/transogg"
+	mkdir -p "/dev/shm/$buffdir"
 fi
 
 #删除缓存，保证程序正常工作
-if [ -e "/dev/shm/transogg/transogg_buff.wav" ]
+if [ -e "/dev/shm/$buffdir/transogg_buff.wav" ]
 then
-	rm /dev/shm/transogg/transogg_buff.wav
+	rm "/dev/shm/$buffdir/transogg_buff.wav"
 fi
 
-if [ -e "/dev/shm/transogg_buff.ogg" ]
+if [ -e "/dev/shm/$buffdir/transogg_buff.ogg" ]
 then
-	rm /dev/shm/transogg/transogg_buff.ogg
+	rm "/dev/shm/$buffdir/transogg_buff.ogg"
 fi
 
 #初始化变量
@@ -113,16 +116,17 @@ do
 	#开始转码
 	
 	#生成中间文件到系统默认的内存文件目录
-	mplayer -really-quiet "$filename" -ao pcm:file=/dev/shm/transogg/buff.wav 2>/dev/null
-	oggenc /dev/shm/transogg/buff.wav -o /dev/shm/transogg/buff.ogg
+	mplayer -really-quiet "$filename" -ao pcm:file="/dev/shm/$buffdir/buff.wav" 2>/dev/null
+	oggenc "/dev/shm/$buffdir/buff.wav" -o "/dev/shm/$buffdir/buff.ogg"
 	
 	#移动目标文件到目标目录
-	mv /dev/shm/transogg/buff.ogg "$dir/${filename%.*}.ogg"
+	filename=${filename##*/}
+	mv "/dev/shm/$buffdir/buff.ogg" "$dir/${filename%.*}.ogg"
 	echo "#file translate conplite#"
 	echo ""
 	
 	#删除中间文件
-	rm /dev/shm/transogg/buff.wav
+	rm "/dev/shm/$buffdir/buff.wav"
 	
 	#结束本次循环
 	n=`expr $n + 1`
@@ -131,9 +135,9 @@ do
 done
 
 #删除缓存目录
-if [ `ls -A "/dev/shm/transogg" | wc -l` = 0]
+if [ `ls -A "/dev/shm/$buffdir" | wc -l` = 0]
 then
-	rmdir "/dev/shm/transogg"
+	rmdir "/dev/shm/$buffdir"
 fi
 
 #打印转码统计
