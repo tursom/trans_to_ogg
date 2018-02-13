@@ -1,0 +1,84 @@
+#!/bin/sh
+
+#批量转换音频等至ogg
+#第一个参数为储存有所有要转码的文件的路径的列表文件
+#第二个参数为制定输出的目录，默认为"./out"
+
+#判断是否给定列表文件
+if [ "$1" = "" ]
+then
+	echo "no input list file"
+	exit
+fi
+
+#判断列表文件是否存在
+a=`ls "$1"`
+if [ "$a" = "" ]
+then
+	echo "list file doesn't exist"
+	exit
+fi
+
+#判断是否给定输出目录
+#默认输出目录为out
+if [ "$2" = "" ]
+then
+	mkdir out
+	dir="./out"
+else
+	mkdir $2
+	dir="$2"
+fi
+echo "output dir:$dir" 
+
+#删除缓存，保证程序正常工作
+rm /dev/shm/buff.wav
+rm /dev/shm/buff.ogg
+
+#初始化变量
+n=1
+echo $1
+a=`sed -n "$n,$n p" "$1"`
+
+#遍历列表文件
+echo ""
+while [ ! "$a" = "" ]
+do
+	echo "#transing the $n th file $a#"
+	#判断文件是否已转码
+	b=`ls "$dir" | grep "${a%.*}.ogg"`
+	if [ "$b" = "" ]
+	then
+		#如果没有转码
+		#输出信息
+		echo ""
+		echo "#---------------------------------------------#"
+		echo "#translating file:$a#"
+		echo "#---------------------------------------------#"
+		echo ""
+		#开始转码
+		#生成中间文件到系统默认的内存文件目录
+		mplayer "$a" -ao pcm:file=/dev/shm/buff.wav
+		oggenc /dev/shm/buff.wav -o /dev/shm/buff.ogg
+		#移动目标文件到目标目录
+		echo ""
+		echo "#file translate conplite#"
+		echo "#copying file#"
+		mv /dev/shm/buff.ogg "$dir/${a%.*}.ogg"
+		echo "#copy file complite#"
+		echo ""
+		#删除中间文件
+		rm /dev/shm/buff.wav
+		#结束本次循环
+		n=`expr $n + 1`
+		a=`sed -n "$n,$n p" "$1"`
+	else
+		#如果已经转码
+		#输出信息
+		echo "#existing ${a%.*}.ogg#"
+		#结束本次循环
+		n=`expr $n + 1`
+		a=`sed -n "$n,$n p" "$1"`
+		continue
+	fi
+done
