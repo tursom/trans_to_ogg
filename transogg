@@ -12,7 +12,7 @@ then
 fi
 
 #判断列表文件是否存在
-if [ -a "$1" ]
+if [ ! -e "$1" ]
 then
 	echo "list file doesn't exist"
 	exit
@@ -33,12 +33,12 @@ fi
 echo "output dir:$dir" 
 
 #删除缓存，保证程序正常工作
-if [ -a "/dev/shm/transogg_buff.wav" ]
+if [ -e "/dev/shm/transogg_buff.wav" ]
 then
 	rm /dev/shm/transogg_buff.wav
 fi
 
-if [ -a "/dev/shm/transogg_buff.ogg" ]
+if [ -e "/dev/shm/transogg_buff.ogg" ]
 then
 	rm /dev/shm/transogg_buff.ogg
 fi
@@ -70,7 +70,7 @@ do
 	fi
 	
 	#判断文件是否存在
-	if [ ! -a "$filename" ]
+	if [ -e "$filename" ]
 	then
 		#如果不存在
 		#打印文件不存在
@@ -85,7 +85,7 @@ do
 
 	
 	#判断文件是否已转码
-	if [ -a "$dir/${filename%.*}.ogg" ]
+	if [ ! -e "$dir/${filename%.*}.ogg" ]
 	then
 		#如果已经转码
 		#输出信息
