@@ -118,7 +118,8 @@ do
 	#生成中间文件到系统默认的内存文件目录
 	#mplayer -really-quiet "$filename" -vo null -ao pcm:file="/dev/shm/$buffdir/buff.wav" 2>/dev/null
 	#oggenc "/dev/shm/$buffdir/buff.wav" -o "/dev/shm/$buffdir/buff.ogg"
-	ffmpeg -i "$filename" -acodec libvorbis "/dev/shm/$buffdir/buff.ogg"
+	ffmpeg -i "$filename" -vn -acodec libvorbis "/dev/shm/$buffdir/buff.ogg"
+	
 	#移动目标文件到目标目录
 	filename=${filename##*/}
 	mv "/dev/shm/$buffdir/buff.ogg" "$dir/${filename%.*}.ogg"
