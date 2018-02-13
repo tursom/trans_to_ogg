@@ -28,7 +28,7 @@ else
 fi
 if [ ! -d "$dir" ]
 then
-	mkdir "$dir"
+	mkdir -p "$dir"
 fi
 echo "output dir:$dir" 
 
@@ -48,7 +48,7 @@ transed=0
 existed=0
 notexist=0
 n=1
-fileline=$(expr $(cat $1 | wc -l) + 1)
+fileline=`expr \`cat $1 | wc -l\` + 1`
 filename=`sed -n "$n,$n p" "$1"`
 
 echo "list file: $1"
