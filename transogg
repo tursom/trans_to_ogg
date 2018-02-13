@@ -135,7 +135,7 @@ do
 done
 
 #删除缓存目录
-if [ `ls -A "/dev/shm/$buffdir" | wc -l` = 0]
+if [ `ls -A "/dev/shm/$buffdir" | wc -l` = 0 ]
 then
 	rmdir "/dev/shm/$buffdir"
 fi
