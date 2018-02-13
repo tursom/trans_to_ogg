@@ -23,11 +23,13 @@ fi
 #默认输出目录为out
 if [ "$2" = "" ]
 then
-	mkdir out
-	dir="./out"
+	dir="out"
 else
-	mkdir $2
 	dir="$2"
+fi
+if [ -d "$dir" ]
+then
+	mkdir "$dir"
 fi
 echo "output dir:$dir" 
 
@@ -47,7 +49,7 @@ do
 	echo "#transing the $n th file $a#"
 	#判断文件是否已转码
 	b=`ls "$dir" | grep "${a%.*}.ogg"`
-	if [ "$b" = "" ]
+	if [ -d "$dir/${a%.*}.ogg" ]
 	then
 		#如果没有转码
 		#输出信息
