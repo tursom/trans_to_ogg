@@ -12,8 +12,7 @@ then
 fi
 
 #判断列表文件是否存在
-a=`ls "$1"`
-if [ "$a" = "" ]
+if [ -d "$1" ]
 then
 	echo "list file doesn't exist"
 	exit
@@ -27,82 +26,100 @@ then
 else
 	dir="$2"
 fi
-if [ -d "$dir" ]
+if [ ! -d "$dir" ]
 then
 	mkdir "$dir"
 fi
 echo "output dir:$dir" 
 
 #删除缓存，保证程序正常工作
-rm /dev/shm/buff.wav
-rm /dev/shm/buff.ogg
+if [ -d "/dev/shm/buff.wav" ]
+then
+	rm /dev/shm/buff.wav
+fi
+
+if [ -d "/dev/shm/buff.ogg" ]
+then
+	rm /dev/shm/buff.ogg
+fi
 
 #初始化变量
 transed=0
 existed=0
 notexist=0
 n=1
-echo $1
+fileline=`expr \`cat $1 | wc -l\` + 1`
+echo "list file: $1"
 a=`sed -n "$n,$n p" "$1"`
 
 #遍历列表文件
 echo ""
-while [ ! "$a" = "" ]
+while [ ! "$n" = "$fileline" ]
 do
+	#判断行是否为空
+	if [ "$a" = "" ]
+	then
+		#如果为空
+		#输出信息
+		echo "line $n is null"
+		#结束本次循环
+		n=`expr $n + 1`
+		a=`sed -n "$n,$n p" "$1"`
+		continue
+	fi
+	
 	#判断文件是否存在
-	if [ ! -d "$a" ]
+	if [ -d "$a" ]
 	then
 		#如果不存在
 		#打印文件不存在
 		echo "file $a doesn't exist!"
 		#结束本次循环
-		notexist=`expt $notexist + 1`
+		notexist=`expr $notexist + 1`
 		n=`expr $n + 1`
 		a=`sed -n "$n,$n p" "$1"`
 		continue
 		
 	fi
-	
-	echo "#transing the $n th file $a#"
+
 	
 	#判断文件是否已转码
-	if [ -d "$dir/${a%.*}.ogg" ]
+	if [ ! -d "$dir/${a%.*}.ogg" ]
 	then
-		#如果没有转码
-		#输出信息
-		echo ""
-		echo "#---------------------------------------------#"
-		echo "#translating file:$a#"
-		echo "#---------------------------------------------#"
-		echo ""
-		#开始转码
-		#生成中间文件到系统默认的内存文件目录
-		mplayer "$a" -ao pcm:file=/dev/shm/buff.wav
-		oggenc /dev/shm/buff.wav -o /dev/shm/buff.ogg
-		#移动目标文件到目标目录
-		echo ""
-		echo "#file translate conplite#"
-		echo "#copying file#"
-		mv /dev/shm/buff.ogg "$dir/${a%.*}.ogg"
-		echo "#copy file complite#"
-		echo ""
-		#删除中间文件
-		rm /dev/shm/buff.wav
-		#结束本次循环
-		n=`expr $n + 1`
-		a=`sed -n "$n,$n p" "$1"`
-		transed=`expr $transed + 1`
-		continue
-	else
 		#如果已经转码
 		#输出信息
-		echo "#existing ${a%.*}.ogg#"
+		echo "#file \"${a%.*}.ogg\" existing#"
 		#结束本次循环
 		n=`expr $n + 1`
 		a=`sed -n "$n,$n p" "$1"`
 		existed=`expr $existed + 1`
 		continue
 	fi
+	
+	#如果检查全部通过
+	#输出信息
+	echo ""
+	echo "#---------------------------------------------#"
+	echo "#translating the $n th file $a#"
+	echo "#---------------------------------------------#"
+	echo ""
+	#开始转码
+	#生成中间文件到系统默认的内存文件目录
+	mplayer "$a" -ao pcm:file=/dev/shm/buff.wav
+	oggenc /dev/shm/buff.wav -o /dev/shm/buff.ogg
+	#移动目标文件到目标目录
+	echo ""
+	echo "#file translate conplite#"
+	echo "#copying file#"
+	mv /dev/shm/buff.ogg "$dir/${a%.*}.ogg"
+	echo "#copy file complite#"
+	echo ""
+	#删除中间文件
+	rm /dev/shm/buff.wav
+	#结束本次循环
+	n=`expr $n + 1`
+		a=`sed -n "$n,$n p" "$1"`
+	transed=`expr $transed + 1`
 done
 
 #打印转码统计
