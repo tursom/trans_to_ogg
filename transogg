@@ -38,6 +38,9 @@ rm /dev/shm/buff.wav
 rm /dev/shm/buff.ogg
 
 #初始化变量
+transed=0
+existed=0
+notexist=0
 n=1
 echo $1
 a=`sed -n "$n,$n p" "$1"`
@@ -46,9 +49,23 @@ a=`sed -n "$n,$n p" "$1"`
 echo ""
 while [ ! "$a" = "" ]
 do
+	#判断文件是否存在
+	if [ ! -d "$a" ]
+	then
+		#如果不存在
+		#打印文件不存在
+		echo "file $a doesn't exist!"
+		#结束本次循环
+		notexist=`expt $notexist + 1`
+		n=`expr $n + 1`
+		a=`sed -n "$n,$n p" "$1"`
+		continue
+		
+	fi
+	
 	echo "#transing the $n th file $a#"
+	
 	#判断文件是否已转码
-	b=`ls "$dir" | grep "${a%.*}.ogg"`
 	if [ -d "$dir/${a%.*}.ogg" ]
 	then
 		#如果没有转码
@@ -74,6 +91,8 @@ do
 		#结束本次循环
 		n=`expr $n + 1`
 		a=`sed -n "$n,$n p" "$1"`
+		transed=`expr $transed + 1`
+		continue
 	else
 		#如果已经转码
 		#输出信息
@@ -81,6 +100,13 @@ do
 		#结束本次循环
 		n=`expr $n + 1`
 		a=`sed -n "$n,$n p" "$1"`
+		existed=`expr $existed + 1`
 		continue
 	fi
 done
+
+#打印转码统计
+echo "trans comlite"
+echo "translated $transed file"
+echo "exising $existed file"
+echo "not exist $notexist file"
