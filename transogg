@@ -70,7 +70,7 @@ do
 	fi
 	
 	#判断文件是否存在
-	if [ -e "$filename" ]
+	if [ ! -e "./$filename" ]
 	then
 		#如果不存在
 		#打印文件不存在
@@ -80,12 +80,11 @@ do
 		n=`expr $n + 1`
 		filename=`sed -n "$n,$n p" "$1"`
 		continue
-		
 	fi
 
 	
 	#判断文件是否已转码
-	if [ ! -e "$dir/${filename%.*}.ogg" ]
+	if [ -e "$dir/${filename%.*}.ogg" ]
 	then
 		#如果已经转码
 		#输出信息
