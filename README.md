@@ -1,7 +1,7 @@
 # trans_to_ogg
 transogg listfile [output dir]
 
-需要安装mplayer和oggenc
+需要安装ffmpeg
 
 将要转码的文件的路径全部储存在listfile中（可自定名称），使用本命令即可
 [output dir]为输出的目录，默认为"out"
