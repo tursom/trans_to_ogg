@@ -32,11 +32,10 @@ then
 fi
 echo "output dir:$dir" 
 
-
 #建立缓存目录到系统默认内存文件系统
 if [ ! -d "/dev/shm/transogg" ]
 then
-	mkdir -d "/dev/shm/transogg"
+	mkdir -p "/dev/shm/transogg"
 fi
 
 #删除缓存，保证程序正常工作
@@ -89,14 +88,14 @@ do
 		filename=`sed -n "$n,$n p" "$1"`
 		continue
 	fi
-
+	
 	
 	#判断文件是否已转码
 	if [ -e "$dir/${filename%.*}.ogg" ]
 	then
 		#如果已经转码
 		#输出信息
-		echo "file \"dir/${filename%.*}.ogg\" are already existing"
+		echo "file \"$dir/${filename%.*}.ogg\" are already existing"
 		#结束本次循环
 		n=`expr $n + 1`
 		filename=`sed -n "$n,$n p" "$1"`
@@ -107,29 +106,24 @@ do
 	#如果检查全部通过
 	
 	#输出信息
-	echo ""
 	echo "#---------------------------------------------#"
-	echo "#translating the $n th file $filename#"
+	echo "#translating the $n th file \"$filename\"#"
 	echo "#---------------------------------------------#"
-	echo ""
-
+	
 	#开始转码
-
+	
 	#生成中间文件到系统默认的内存文件目录
-	mplayer "$filename" -ao pcm:file=/dev/shm/transogg/buff.wav
-	oggenc /dev/shm/buff.wav -o /dev/shm/transogg/buff.ogg
-
+	mplayer -really-quiet "$filename" -ao pcm:file=/dev/shm/transogg/buff.wav 2>/dev/null
+	oggenc /dev/shm/transogg/buff.wav -o /dev/shm/transogg/buff.ogg
+	
 	#移动目标文件到目标目录
-	echo ""
-	echo "#file translate conplite#"
-	echo "#copying file#"
 	mv /dev/shm/transogg/buff.ogg "$dir/${filename%.*}.ogg"
-	echo "#copy file complite#"
+	echo "#file translate conplite#"
 	echo ""
-
+	
 	#删除中间文件
 	rm /dev/shm/transogg/buff.wav
-
+	
 	#结束本次循环
 	n=`expr $n + 1`
 	filename=`sed -n "$n,$n p" "$1"`
@@ -137,7 +131,10 @@ do
 done
 
 #删除缓存目录
-rm -rf "/dev/shm/transogg"
+if [ `ls -A "/dev/shm/transogg" | wc -l` = 0]
+then
+	rmdir "/dev/shm/transogg"
+fi
 
 #打印转码统计
 echo "trans comlite"
