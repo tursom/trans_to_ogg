@@ -11,7 +11,7 @@ transogg listfile [output dir]
 例：
 ./transogg list1 /tmp/music/ogg
 
-ls *.mp3 2>/dev/null > "/dev/shm/mp3filelist$$"; transogg "/dev/shm/mp3filelist$$"; rm "/dev/shm/mp3filelist$$"
+ls \*.mp3 2>/dev/null > "/dev/shm/mp3filelist$$"; transogg "/dev/shm/mp3filelist$$"; rm "/dev/shm/mp3filelist$$"
 #批量转码mp3（中断此命令可引发内存泄漏，请关闭所有正在运行的此命令并手动删除"/dev/shm/mp3filelist*"以及"/dev/shm/transogg*"来释放内存）
 
 ps：可将本脚本放入/usr/local/bin中，方便随时调用
