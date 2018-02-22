@@ -16,3 +16,5 @@ ls \*.mp3 2>/dev/null > "/dev/shm/mp3filelist$$"; transogg "/dev/shm/mp3filelist
 
 ps：可将本脚本放入/usr/local/bin中，方便随时调用
 
+#2018/2/23 更新
+添加多线程功能
