@@ -1,8 +1,89 @@
 #!/bin/sh
-
+#################################################
 #批量转换音频等至ogg
 #第一个参数为储存有所有要转码的文件的路径的列表文件
 #第二个参数为制定输出的目录，默认为"./out"
+#################################################
+
+
+#定义转码函数
+#第一个参数为要转码的文件路径与全名
+#第二个参数为缓冲目录
+#第三个参数为独一无二的一个数字，表示第几个转码
+trans(){
+	filename=$1
+	
+	#保存缓冲目录路径
+	if [ "$buffdir" = "" ]
+	then
+		#默认为transogg加当前进程的pid
+		buffdir="transogg$$"
+	else
+		buffdir=$2
+	fi
+	#检查缓存目录是否存在，不存在则建立缓存目录
+	if [ ! -d "/dev/shm/$buffdir" ]
+	then
+		mkdir -p "/dev/shm/$buffdir"
+	fi
+	#再次检查是否建立成功，没有成功建立则直接返回
+	if [ ! -d "/dev/shm/$buffdir" ]
+	then
+		return
+	fi
+
+	if [ "$n" = "" ]
+	then
+		n=1
+	else
+		n=$3
+	fi
+	
+	#判断行是否为空
+	if [ "$filename" = "" ]
+	then
+		#如果为空
+		#输出信息
+		echo "line $n is null"
+		return
+	fi
+	
+	#判断文件是否存在
+	if [ ! -e "./$filename" ]
+	then
+		#如果不存在
+		#打印文件不存在
+		echo "file $filename doesn't exist!"
+		return
+	fi
+	
+	
+	#判断文件是否已转码
+	if [ -e "$dir/${filename%.*}.ogg" ]
+	then
+		#如果已经转码
+		#输出信息
+		echo "file \"$dir/${filename%.*}.ogg\" are already existing"
+		return
+	fi
+	
+	#输出信息
+	echo "#---------------------------------------------#"
+	echo "#translating the ${n}th file \"$filename\"#"
+	
+	#开始转码
+	
+	#生成中间文件到系统默认的内存文件目录
+	ffmpeg -i "$filename" -v quiet -vn -acodec libvorbis "/dev/shm/$buffdir/buff$$.ogg"
+	
+	#移动目标文件到目标目录
+	filenamebk="$filename"
+	filename=${filename##*/}
+	mv "/dev/shm/$buffdir/buff$$.ogg" "$dir/${filename%.*}.ogg"
+	echo "#+++++++++++++++++++++++++++++++++++++++++++++#"
+	echo "#file \"$filenamebk\" translate conplite#"
+	echo ""
+}
 
 #判断是否给定列表文件
 if [ "$1" = "" ]
@@ -32,6 +113,13 @@ then
 fi
 echo "output dir:$dir" 
 
+if [ "$3" = "" ]
+then
+	tread=1
+else
+	tread=$3
+fi
+
 #指定缓存目录
 buffdir="transogg$$"
 
@@ -39,6 +127,11 @@ buffdir="transogg$$"
 if [ ! -d "/dev/shm/$buffdir" ]
 then
 	mkdir -p "/dev/shm/$buffdir"
+fi
+#再次检查是否建立成功，没有成功建立则直接退出
+if [ ! -d "/dev/shm/$buffdir" ]
+then
+	exit
 fi
 
 #删除缓存，保证程序正常工作
@@ -64,70 +157,36 @@ echo "list file: $1"
 
 #遍历列表文件
 echo ""
-while [ ! "$n" = "$fileline" ]
+while true #条件判断在后面
 do
-	#判断行是否为空
-	if [ "$filename" = "" ]
-	then
-		#如果为空
-		#输出信息
-		echo "line $n is null"
-		#结束本次循环
-		n=`expr $n + 1`
-		filename=`sed -n "$n,$n p" "$1"`
-		continue
-	fi
-	
-	#判断文件是否存在
-	if [ ! -e "./$filename" ]
-	then
-		#如果不存在
-		#打印文件不存在
-		echo "file $filename doesn't exist!"
+	#创建$tread个进程同时转码
+	i=0
+	while [ "$i" -lt "$tread" ]
+	do
+		i=`expr $i + 1`
+		
+		#判断是否到达文件尾
+		if  [ "$n" = "$fileline" ]
+		then
+			break
+		fi
+		
+		#在后台进行转码
+		trans "$filename" "$buffdir" "$n" &
 		
 		#结束本次循环
-		notexist=`expr $notexist + 1`
 		n=`expr $n + 1`
 		filename=`sed -n "$n,$n p" "$1"`
-		continue
-	fi
+		transed=`expr $transed + 1`
+	done
+	wait
 	
-	
-	#判断文件是否已转码
-	if [ -e "$dir/${filename%.*}.ogg" ]
+	#跳出循环的条件判断
+	#判断是否到达文件尾
+	if  [ "$n" = "$fileline" ]
 	then
-		#如果已经转码
-		#输出信息
-		echo "file \"$dir/${filename%.*}.ogg\" are already existing"
-		#结束本次循环
-		n=`expr $n + 1`
-		filename=`sed -n "$n,$n p" "$1"`
-		existed=`expr $existed + 1`
-		continue
+		break
 	fi
-	
-	#如果检查全部通过
-	
-	#输出信息
-	echo "#---------------------------------------------#"
-	echo "#translating the $n th file \"$filename\"#"
-	echo "#---------------------------------------------#"
-	
-	#开始转码
-	
-	#生成中间文件到系统默认的内存文件目录
-	#mplayer -really-quiet "$filename" -vo null -ao pcm:file="/dev/shm/$buffdir/buff.wav" 2>/dev/null
-	#oggenc "/dev/shm/$buffdir/buff.wav" -o "/dev/shm/$buffdir/buff.ogg"
-	ffmpeg -i "$filename" -vn -acodec libvorbis "/dev/shm/$buffdir/buff.ogg"
-	
-	#移动目标文件到目标目录
-	filename=${filename##*/}
-	mv "/dev/shm/$buffdir/buff.ogg" "$dir/${filename%.*}.ogg"
-	echo "#file translate conplite#"
-	echo ""
-	
-	#删除中间文件
-	rm "/dev/shm/$buffdir/buff.wav"
 	
 	#结束本次循环
 	n=`expr $n + 1`
