@@ -74,12 +74,12 @@ trans(){
 	#开始转码
 	
 	#生成中间文件到系统默认的内存文件目录
-	ffmpeg -i "$filename" -v quiet -vn -acodec libvorbis "/dev/shm/$buffdir/buff$$.ogg"
+	ffmpeg -i "$filename" -v quiet -vn -acodec libvorbis "/dev/shm/$buffdir/buff$!.ogg"
 	
 	#移动目标文件到目标目录
 	filenamebk="$filename"
 	filename=${filename##*/}
-	mv "/dev/shm/$buffdir/buff$$.ogg" "$dir/${filename%.*}.ogg"
+	mv "/dev/shm/$buffdir/buff$!.ogg" "$dir/${filename%.*}.ogg"
 	echo "#+++++++++++++++++++++++++++++++++++++++++++++#"
 	echo "#file \"$filenamebk\" translate conplite#"
 	echo ""
