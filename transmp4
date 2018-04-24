@@ -1,0 +1,207 @@
+#!/bin/sh
+#################################################
+#批量转换音频等至ogg
+#第一个参数为储存有所有要转码的文件的路径的列表文件
+#第二个参数为制定输出的目录，默认为"./out"
+#################################################
+
+
+#定义转码函数
+#第一个参数为要转码的文件路径与全名
+#第二个参数为缓冲目录
+#第三个参数为独一无二的一个数字，表示第几个转码
+trans(){
+	filename=$1
+	
+	#保存缓冲目录路径
+	if [ "$buffdir" = "" ]
+	then
+		#默认为transogg加当前进程的pid
+		buffdir="transogg$$"
+	else
+		buffdir=$2
+	fi
+	#检查缓存目录是否存在，不存在则建立缓存目录
+	if [ ! -d "/dev/shm/$buffdir" ]
+	then
+		mkdir -p "/dev/shm/$buffdir"
+	fi
+	#再次检查是否建立成功，没有成功建立则直接返回
+	if [ ! -d "/dev/shm/$buffdir" ]
+	then
+		return
+	fi
+
+	if [ "$n" = "" ]
+	then
+		n=1
+	else
+		n=$3
+	fi
+	
+	#判断行是否为空
+	if [ "$filename" = "" ]
+	then
+		#如果为空
+		#输出信息
+		echo "line $n is null"
+		return
+	fi
+	
+	#判断文件是否存在
+	if [ ! -e "./$filename" ]
+	then
+		#如果不存在
+		#打印文件不存在
+		echo "file $filename doesn't exist!"
+		return
+	fi
+	
+	
+	#判断文件是否已转码
+	if [ -e "$dir/${filename%.*}.ogg" ]
+	then
+		#如果已经转码
+		#输出信息
+		echo "file \"$dir/${filename%.*}.ogg\" are already existing"
+		return
+	fi
+	
+	#输出信息
+	echo "#---------------------------------------------#"
+	echo "#translating the ${n}th file \"$filename\"#"
+	
+	#开始转码
+	
+	#生成中间文件到系统默认的内存文件目录
+	ffmpeg -i "$filename" -v quiet -vn -acodec libvorbis "/dev/shm/$buffdir/buff$!.ogg"
+	
+	#移动目标文件到目标目录
+	filenamebk="$filename"
+	filename=${filename##*/}
+	mv "/dev/shm/$buffdir/buff$!.ogg" "$dir/${filename%.*}.ogg"
+	echo "#+++++++++++++++++++++++++++++++++++++++++++++#"
+	echo "#file \"$filenamebk\" translate conplite#"
+	echo ""
+}
+
+#判断是否给定列表文件
+if [ "$1" = "" ]
+then
+	echo "no input list file"
+	exit
+fi
+
+#判断列表文件是否存在
+if [ ! -e "$1" ]
+then
+	echo "list file doesn't exist"
+	exit
+fi
+
+#判断是否给定输出目录
+#默认输出目录为out
+if [ "$2" = "" ]
+then
+	dir="out"
+else
+	dir="$2"
+fi
+if [ ! -d "$dir" ]
+then
+	mkdir -p "$dir"
+fi
+echo "output dir:$dir" 
+
+if [ "$3" = "" ]
+then
+	tread=1
+else
+	tread=$3
+fi
+
+#指定缓存目录
+buffdir="transogg$$"
+
+#建立缓存目录到系统默认内存文件系统
+if [ ! -d "/dev/shm/$buffdir" ]
+then
+	mkdir -p "/dev/shm/$buffdir"
+fi
+#再次检查是否建立成功，没有成功建立则直接退出
+if [ ! -d "/dev/shm/$buffdir" ]
+then
+	exit
+fi
+
+#删除缓存，保证程序正常工作
+if [ -e "/dev/shm/$buffdir/transogg_buff.wav" ]
+then
+	rm "/dev/shm/$buffdir/transogg_buff.wav"
+fi
+
+if [ -e "/dev/shm/$buffdir/transogg_buff.ogg" ]
+then
+	rm "/dev/shm/$buffdir/transogg_buff.ogg"
+fi
+
+#初始化变量
+transed=0
+existed=0
+notexist=0
+n=1
+fileline=`expr \`cat $1 | wc -l\` + 1`
+filename=`sed -n "$n,$n p" "$1"`
+
+echo "list file: $1"
+
+#遍历列表文件
+echo ""
+while true #条件判断在后面
+do
+	#创建$tread个进程同时转码
+	i=0
+	while [ "$i" -lt "$tread" ]
+	do
+		i=`expr $i + 1`
+		
+		#判断是否到达文件尾
+		if  [ "$n" = "$fileline" ]
+		then
+			break
+		fi
+		
+		#在后台进行转码
+		trans "$filename" "$buffdir" "$n" &
+		
+		#结束本次循环
+		n=`expr $n + 1`
+		filename=`sed -n "$n,$n p" "$1"`
+		transed=`expr $transed + 1`
+	done
+	wait
+	
+	#跳出循环的条件判断
+	#判断是否到达文件尾
+	if  [ "$n" = "$fileline" ]
+	then
+		break
+	fi
+	
+	#结束本次循环
+	n=`expr $n + 1`
+	filename=`sed -n "$n,$n p" "$1"`
+	transed=`expr $transed + 1`
+done
+
+#删除缓存目录
+if [ `ls -A "/dev/shm/$buffdir" | wc -l` = 0 ]
+then
+	rmdir "/dev/shm/$buffdir"
+fi
+
+#打印转码统计
+echo "trans comlite"
+echo "translated $transed file"
+echo "exising $existed file"
+echo "not exist $notexist file"
