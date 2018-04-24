@@ -17,7 +17,7 @@ trans(){
 	if [ "$buffdir" = "" ]
 	then
 		#默认为transogg加当前进程的pid
-		buffdir="transogg$$"
+		buffdir="transmp4$$"
 	else
 		buffdir=$2
 	fi
@@ -59,11 +59,11 @@ trans(){
 	
 	
 	#判断文件是否已转码
-	if [ -e "$dir/${filename%.*}.ogg" ]
+	if [ -e "$dir/${filename%.*}.mp4" ]
 	then
 		#如果已经转码
 		#输出信息
-		echo "file \"$dir/${filename%.*}.ogg\" are already existing"
+		echo "file \"$dir/${filename%.*}.mp4\" are already existing"
 		return
 	fi
 	
@@ -74,12 +74,12 @@ trans(){
 	#开始转码
 	
 	#生成中间文件到系统默认的内存文件目录
-	ffmpeg -i "$filename" -v quiet -vn -acodec libvorbis "/dev/shm/$buffdir/buff$!.ogg"
+	ffmpeg -i "$filename" -codec copy "/dev/shm/$buffdir/buff$!.mp4"
 	
 	#移动目标文件到目标目录
 	filenamebk="$filename"
 	filename=${filename##*/}
-	mv "/dev/shm/$buffdir/buff$!.ogg" "$dir/${filename%.*}.ogg"
+	mv "/dev/shm/$buffdir/buff$!.mp4" "$dir/${filename%.*}.mp4"
 	echo "#+++++++++++++++++++++++++++++++++++++++++++++#"
 	echo "#file \"$filenamebk\" translate conplite#"
 	echo ""
@@ -121,7 +121,7 @@ else
 fi
 
 #指定缓存目录
-buffdir="transogg$$"
+buffdir="transmp4$$"
 
 #建立缓存目录到系统默认内存文件系统
 if [ ! -d "/dev/shm/$buffdir" ]
@@ -135,14 +135,14 @@ then
 fi
 
 #删除缓存，保证程序正常工作
-if [ -e "/dev/shm/$buffdir/transogg_buff.wav" ]
+if [ -e "/dev/shm/$buffdir/transmp4_buff.wav" ]
 then
-	rm "/dev/shm/$buffdir/transogg_buff.wav"
+	rm "/dev/shm/$buffdir/transmp4_buff.wav"
 fi
 
-if [ -e "/dev/shm/$buffdir/transogg_buff.ogg" ]
+if [ -e "/dev/shm/$buffdir/transmp4_buff.mp4" ]
 then
-	rm "/dev/shm/$buffdir/transogg_buff.ogg"
+	rm "/dev/shm/$buffdir/transmp4_buff.mp4"
 fi
 
 #初始化变量
