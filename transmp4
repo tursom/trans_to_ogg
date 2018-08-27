@@ -74,7 +74,7 @@ trans(){
 	#开始转码
 	
 	#生成中间文件到系统默认的内存文件目录
-	ffmpeg -i "$filename" -codec copy "/dev/shm/$buffdir/buff$!.mp4"
+	ffmpeg -i "$filename" -vcodec libx264 -preset medium -crf 26 -y -vf "scale=1920:-1" -acodec libmp3lame -ab 128k -threads 2 "/dev/shm/$buffdir/buff$!.mp4"
 	
 	#移动目标文件到目标目录
 	filenamebk="$filename"
@@ -159,27 +159,19 @@ echo "list file: $1"
 echo ""
 while true #条件判断在后面
 do
-	#创建$tread个进程同时转码
-	i=0
-	while [ "$i" -lt "$tread" ]
-	do
-		i=`expr $i + 1`
-		
-		#判断是否到达文件尾
-		if  [ "$n" = "$fileline" ]
-		then
-			break
-		fi
-		
-		#在后台进行转码
-		trans "$filename" "$buffdir" "$n" &
-		
-		#结束本次循环
-		n=`expr $n + 1`
-		filename=`sed -n "$n,$n p" "$1"`
-		transed=`expr $transed + 1`
-	done
-	wait
+	#判断是否到达文件尾
+	if  [ "$n" = "$fileline" ]
+	then
+		break
+	fi
+	
+	#在后台进行转码
+	trans "$filename" "$buffdir" "$n" 
+	
+	#结束本次循环
+	n=`expr $n + 1`
+	filename=`sed -n "$n,$n p" "$1"`
+	transed=`expr $transed + 1`
 	
 	#跳出循环的条件判断
 	#判断是否到达文件尾
@@ -187,11 +179,6 @@ do
 	then
 		break
 	fi
-	
-	#结束本次循环
-	n=`expr $n + 1`
-	filename=`sed -n "$n,$n p" "$1"`
-	transed=`expr $transed + 1`
 done
 
 #删除缓存目录
